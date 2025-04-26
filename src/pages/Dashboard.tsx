@@ -6,6 +6,7 @@ import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Link } from "react-router-dom";
+import { Badge } from "@/components/ui/badge";
 
 // Mock data types
 interface User {
@@ -15,18 +16,35 @@ interface User {
   farmSize: string;
 }
 
+interface LoanApplication {
+  id: string;
+  loanType: string;
+  amount: string;
+  purpose: string;
+  repaymentTerm: string;
+  status: string;
+  appliedAt: string;
+  txHash?: string;
+}
+
 const Dashboard = () => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [riskScore, setRiskScore] = useState<number>(0);
   const [loanEligibility, setLoanEligibility] = useState<"Low" | "Medium" | "High">("Low");
-  const [weatherAlert, setWeatherAlert] = useState<string | null>(null);
+  const [applications, setApplications] = useState<LoanApplication[]>([]);
 
   useEffect(() => {
     // Load user data from localStorage
     const userData = localStorage.getItem("agrifin_user");
     if (userData) {
       setUser(JSON.parse(userData));
+    }
+
+    // Load loan applications
+    const loanData = localStorage.getItem("agrifin_loans");
+    if (loanData) {
+      setApplications(JSON.parse(loanData));
     }
 
     // Simulate API call for risk assessment
@@ -42,11 +60,6 @@ const Dashboard = () => {
         setLoanEligibility("Medium");
       } else {
         setLoanEligibility("Low");
-      }
-      
-      // Simulate random weather alert (30% chance)
-      if (Math.random() > 0.7) {
-        setWeatherAlert("Rainfall levels below average. Consider drought insurance.");
       }
       
       setLoading(false);
@@ -74,13 +87,6 @@ const Dashboard = () => {
           Here's an overview of your farming and financial status
         </p>
       </div>
-
-      {weatherAlert && (
-        <Alert className="mb-6 border-amber-500 bg-amber-50 text-amber-800">
-          <AlertTitle>Weather Alert</AlertTitle>
-          <AlertDescription>{weatherAlert}</AlertDescription>
-        </Alert>
-      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
         <Card>
@@ -146,43 +152,64 @@ const Dashboard = () => {
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
         <Card>
           <CardHeader>
-            <CardTitle>Latest Activity</CardTitle>
-            <CardDescription>Recent actions on your account</CardDescription>
+            <CardTitle>Your Loan Applications</CardTitle>
+            <CardDescription>Status of your microloan applications</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              <div className="border-b pb-3">
-                <p className="font-medium">Account Created</p>
-                <p className="text-sm text-muted-foreground">Your account was successfully registered</p>
-                <p className="text-xs text-muted-foreground mt-1">{new Date().toLocaleDateString()}</p>
+            {applications.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <p>You haven't applied for any loans yet</p>
+                <Button asChild className="mt-4">
+                  <Link to="/loan">Apply Now</Link>
+                </Button>
               </div>
-              <div className="text-center text-muted-foreground py-4">
-                <p>No other recent activity</p>
+            ) : (
+              <div className="space-y-4">
+                {applications.map((app) => (
+                  <div 
+                    key={app.id} 
+                    className="border rounded-lg p-4 flex flex-col md:flex-row gap-4 justify-between items-start md:items-center"
+                  >
+                    <div>
+                      <h4 className="font-medium">{app.loanType}</h4>
+                      <p className="text-sm text-muted-foreground">{app.purpose}</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Applied: {new Date(app.appliedAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <div className="flex flex-col items-end">
+                      <div className="text-lg font-semibold">₹{app.amount}</div>
+                      <Badge 
+                        variant={
+                          app.status === "approved" 
+                            ? "success" 
+                            : app.status === "rejected"
+                              ? "destructive"
+                              : "outline"
+                        }
+                      >
+                        {app.status === "approved" ? "Approved" : 
+                         app.status === "rejected" ? "Rejected" : 
+                         "Pending"}
+                      </Badge>
+                      {app.txHash && (
+                        <a 
+                          href={`https://sepolia.etherscan.io/tx/${app.txHash}`} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-xs text-primary mt-1 hover:underline"
+                        >
+                          View Transaction
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                ))}
               </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Quick Actions</CardTitle>
-            <CardDescription>Manage your financial services</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 gap-4">
-              <Button asChild>
-                <Link to="/loan">Apply for Microloan</Link>
-              </Button>
-              <Button asChild variant="outline">
-                <Link to="/insurance">Get Crop Insurance</Link>
-              </Button>
-              <Button asChild variant="secondary">
-                <Link to="/profile">Complete Your Profile</Link>
-              </Button>
-            </div>
+            )}
           </CardContent>
         </Card>
       </div>

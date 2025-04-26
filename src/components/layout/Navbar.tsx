@@ -30,7 +30,7 @@ const Navbar = () => {
               <Link to="/loan">Loans</Link>
             </Button>
             <Button asChild variant="ghost">
-              <Link to="/insurance">Insurance</Link>
+              <Link to="/admin/login">Admin</Link>
             </Button>
             <Button asChild>
               <Link to="/register">Get Started</Link>
@@ -68,11 +68,11 @@ const Navbar = () => {
               Loans
             </Link>
             <Link 
-              to="/insurance" 
+              to="/admin/login" 
               className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-50"
               onClick={() => setIsMenuOpen(false)}
             >
-              Insurance
+              Admin
             </Link>
             <Link 
               to="/register" 

@@ -26,12 +26,13 @@ import {
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import DashboardLayout from "@/components/layout/DashboardLayout";
+import { connectToMetaMask, MetaMaskState } from "@/utils/metamask";
 
-// Mock loan data
+// Simplified loan types for rural users
 const LOAN_TYPES = [
-  { id: 1, name: "Crop Production Loan", minAmount: 10000, maxAmount: 50000, interestRate: 4.5 },
-  { id: 2, name: "Equipment Purchase Loan", minAmount: 20000, maxAmount: 100000, interestRate: 5.5 },
-  { id: 3, name: "Seed & Fertilizer Loan", minAmount: 5000, maxAmount: 30000, interestRate: 3.5 },
+  { id: 1, name: "Crop Production Loan", minAmount: 5000, maxAmount: 50000, interestRate: 4.5 },
+  { id: 2, name: "Equipment Purchase Loan", minAmount: 10000, maxAmount: 100000, interestRate: 5.5 },
+  { id: 3, name: "Seed & Fertilizer Loan", minAmount: 2000, maxAmount: 25000, interestRate: 3.5 },
 ];
 
 const formSchema = z.object({
@@ -41,7 +42,7 @@ const formSchema = z.object({
     .refine((val) => !isNaN(Number(val)) && Number(val) > 0, {
       message: "Amount must be a positive number",
     }),
-  purpose: z.string().min(10, { message: "Please provide a detailed purpose (min 10 characters)" }),
+  purpose: z.string().min(5, { message: "Please provide a purpose (min 5 characters)" }),
   repaymentTerm: z.string().min(1, { message: "Please select a repayment term" }),
 });
 
@@ -52,6 +53,7 @@ const Loan = () => {
   const [loading, setLoading] = useState(true);
   const [riskScore, setRiskScore] = useState(0);
   const [isEligible, setIsEligible] = useState(false);
+  const [metamask, setMetamask] = useState<MetaMaskState | null>(null);
   
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -85,6 +87,13 @@ const Loan = () => {
   const selectedLoan = selectedLoanType
     ? LOAN_TYPES.find((loan) => loan.id === selectedLoanType)
     : null;
+  
+  const handleConnectMetaMask = async () => {
+    const result = await connectToMetaMask();
+    if (result) {
+      setMetamask(result);
+    }
+  };
     
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsSubmitting(true);
@@ -104,7 +113,7 @@ const Loan = () => {
       });
       localStorage.setItem("agrifin_loans", JSON.stringify(loanApplications));
       
-      toast.success("Loan application submitted successfully!");
+      toast.success("Loan application submitted successfully! Wait for admin approval.");
       navigate("/dashboard");
     } catch (error) {
       toast.error("Failed to submit loan application. Please try again.");
@@ -147,7 +156,6 @@ const Loan = () => {
             </p>
             <ul className="list-disc ml-5 mt-2 space-y-1">
               <li>Adding more details to your farm profile</li>
-              <li>Enrolling in crop insurance for risk protection</li>
               <li>Building a positive repayment history with smaller loans</li>
             </ul>
           </CardContent>
@@ -172,7 +180,7 @@ const Loan = () => {
                       name="loanType"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Loan Type</FormLabel>
+                          <FormLabel>Loan Type / लोन प्रकार</FormLabel>
                           <Select onValueChange={onLoanTypeChange} defaultValue={field.value}>
                             <FormControl>
                               <SelectTrigger>
@@ -197,7 +205,7 @@ const Loan = () => {
                       name="amount"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Loan Amount (₹)</FormLabel>
+                          <FormLabel>Loan Amount (₹) / लोन राशि (₹)</FormLabel>
                           <FormControl>
                             <Input 
                               placeholder="Enter loan amount" 
@@ -220,15 +228,15 @@ const Loan = () => {
                       name="purpose"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Loan Purpose</FormLabel>
+                          <FormLabel>Loan Purpose / लोन का उद्देश्य</FormLabel>
                           <FormControl>
                             <Input 
-                              placeholder="Describe how you will use the loan" 
+                              placeholder="How will you use the loan?" 
                               {...field} 
                             />
                           </FormControl>
                           <FormDescription>
-                            Explain how this loan will help your farming business
+                            Briefly explain how this loan will help your farm
                           </FormDescription>
                           <FormMessage />
                         </FormItem>
@@ -240,7 +248,7 @@ const Loan = () => {
                       name="repaymentTerm"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Repayment Term</FormLabel>
+                          <FormLabel>Repayment Term / भुगतान अवधि</FormLabel>
                           <Select onValueChange={field.onChange} defaultValue={field.value}>
                             <FormControl>
                               <SelectTrigger>
@@ -248,10 +256,9 @@ const Loan = () => {
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="3months">3 months</SelectItem>
-                              <SelectItem value="6months">6 months</SelectItem>
-                              <SelectItem value="12months">12 months</SelectItem>
-                              <SelectItem value="24months">24 months</SelectItem>
+                              <SelectItem value="3months">3 months / 3 महीने</SelectItem>
+                              <SelectItem value="6months">6 months / 6 महीने</SelectItem>
+                              <SelectItem value="12months">12 months / 12 महीने</SelectItem>
                             </SelectContent>
                           </Select>
                           <FormMessage />
@@ -269,7 +276,7 @@ const Loan = () => {
           </div>
           
           <div>
-            <Card className="bg-primary/5">
+            <Card className="bg-primary/5 mb-6">
               <CardHeader>
                 <CardTitle>Loan Eligibility</CardTitle>
                 <CardDescription>Your current loan status</CardDescription>
@@ -298,41 +305,37 @@ const Loan = () => {
                       <div className="font-medium">₹{riskScore * 1000}</div>
                     </div>
                   )}
-                  
-                  <div>
-                    <Label className="text-sm text-muted-foreground">Interest Rate Range</Label>
-                    <div className="font-medium">
-                      {isEligible ? `${4 + (100 - riskScore) / 20}% - ${7 + (100 - riskScore) / 10}%` : "Not applicable"}
-                    </div>
-                  </div>
                 </div>
               </CardContent>
-              <CardFooter className="bg-primary/10 text-xs text-muted-foreground">
-                <p>Blockchain-powered smart contracts ensure loan transparency and security</p>
-              </CardFooter>
             </Card>
             
-            <Card className="mt-6">
-              <CardHeader>
-                <CardTitle>Why Choose AgriFin?</CardTitle>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle>Connect Wallet</CardTitle>
+                <Button 
+                  variant={metamask?.isConnected ? "outline" : "default"}
+                  onClick={handleConnectMetaMask}
+                >
+                  {metamask?.isConnected ? "Connected" : "Connect"}
+                </Button>
               </CardHeader>
-              <CardContent className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-primary"></div>
-                  <p>No hidden fees or charges</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-primary"></div>
-                  <p>Fast approval process</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-primary"></div>
-                  <p>Flexible repayment options</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-primary"></div>
-                  <p>Transparent blockchain contracts</p>
-                </div>
+              <CardContent>
+                {metamask?.isConnected ? (
+                  <div className="space-y-2">
+                    <div>
+                      <Label className="text-sm text-muted-foreground">Address</Label>
+                      <p className="font-mono text-xs truncate">{metamask.accounts[0]}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm text-muted-foreground">Balance</Label>
+                      <p>{metamask.balance} ETH</p>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-sm">
+                    Connect your MetaMask wallet to receive loan funds when approved
+                  </p>
+                )}
               </CardContent>
             </Card>
           </div>
