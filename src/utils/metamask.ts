@@ -67,6 +67,7 @@ export async function sendTransaction(to: string, amountInEth: string): Promise<
         from,
         to,
         value: '0x' + amountInWei,
+        gas: '0x5208', // 21000 gas limit for standard ETH transfer
       }],
     });
     

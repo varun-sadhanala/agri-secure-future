@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { z } from "zod";
@@ -28,11 +27,11 @@ import { Label } from "@/components/ui/label";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 import { connectToMetaMask, MetaMaskState } from "@/utils/metamask";
 
-// Simplified loan types for rural users
+// Updated loan types with ETH amounts
 const LOAN_TYPES = [
-  { id: 1, name: "Crop Production Loan", minAmount: 5000, maxAmount: 50000, interestRate: 4.5 },
-  { id: 2, name: "Equipment Purchase Loan", minAmount: 10000, maxAmount: 100000, interestRate: 5.5 },
-  { id: 3, name: "Seed & Fertilizer Loan", minAmount: 2000, maxAmount: 25000, interestRate: 3.5 },
+  { id: 1, name: "Crop Production Loan", minAmount: 0.0001, maxAmount: 0.001, interestRate: 4.5 },
+  { id: 2, name: "Equipment Purchase Loan", minAmount: 0.0002, maxAmount: 0.001, interestRate: 5.5 },
+  { id: 3, name: "Seed & Fertilizer Loan", minAmount: 0.0001, maxAmount: 0.0005, interestRate: 3.5 },
 ];
 
 const formSchema = z.object({
@@ -138,7 +137,7 @@ const Loan = () => {
       <div className="mb-6">
         <h1 className="text-2xl font-bold">Apply for a Microloan</h1>
         <p className="text-muted-foreground">
-          Access affordable financing for your farming needs
+          Access affordable financing for your farming needs (in ETH)
         </p>
       </div>
       
@@ -169,7 +168,7 @@ const Loan = () => {
               <CardHeader>
                 <CardTitle>Loan Application Form</CardTitle>
                 <CardDescription>
-                  Fill out the details below to apply for your loan
+                  Fill out the details below to apply for your loan. Amounts are in ETH.
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -205,17 +204,21 @@ const Loan = () => {
                       name="amount"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Loan Amount (₹) / लोन राशि (₹)</FormLabel>
+                          <FormLabel>Loan Amount (ETH) / लोन राशि (ETH)</FormLabel>
                           <FormControl>
                             <Input 
-                              placeholder="Enter loan amount" 
+                              placeholder="Enter loan amount in ETH" 
                               {...field} 
                               disabled={!selectedLoan}
+                              type="number"
+                              step="0.0001"
+                              min={selectedLoan?.minAmount}
+                              max={selectedLoan?.maxAmount}
                             />
                           </FormControl>
                           {selectedLoan && (
                             <FormDescription>
-                              Available range: ₹{selectedLoan.minAmount} to ₹{selectedLoan.maxAmount}
+                              Available range: {selectedLoan.minAmount} ETH to {selectedLoan.maxAmount} ETH
                             </FormDescription>
                           )}
                           <FormMessage />
